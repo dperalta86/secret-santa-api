@@ -1,4 +1,6 @@
 version: '3.8'
+# Development environment only - not for production use
+# These credentials are for local development and are safe to commit
 
 services:
   mysql:
@@ -19,7 +21,6 @@ services:
       timeout: 20s
       retries: 10
 
-  # Opcional: Adminer para visualizar la DB
   adminer:
     image: adminer:latest
     container_name: secretsanta-adminer
@@ -28,6 +29,19 @@ services:
       - "8081:8080"
     depends_on:
       - mysql
+
+  # Opcional: App containerizada
+  # app:
+  #   build: .
+  #   container_name: secretsanta-app
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: dev
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - mysql
 
 volumes:
   mysql_data:

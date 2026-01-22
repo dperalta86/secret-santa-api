@@ -34,7 +34,13 @@ build/
 
 ### Environment ###
 .env
+.env.*
+!.env.example
 *.env
+
+### Sensitive Settings ###
+application-local.yml
+application-secrets.yml
 
 ### Logs ###
 logs/
