@@ -45,3 +45,6 @@ application-secrets.yml
 ### Logs ###
 logs/
 *.log
+
+### Local Test ###
+EmailNotificationServiceTest.java
