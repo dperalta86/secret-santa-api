@@ -3,8 +3,8 @@ package com.dperalta.secret_santa.service.impl;
 import com.dperalta.secret_santa.model.Draw;
 import com.dperalta.secret_santa.model.Participant;
 import com.dperalta.secret_santa.service.NotificationService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -15,12 +15,12 @@ import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailNotificationService implements NotificationService {
 
-    private final JavaMailSender mailSender;
+    @Autowired(required = false)
+    private JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String fromEmail;
 
     @Value("${app.frontend.url}")
@@ -30,26 +30,34 @@ public class EmailNotificationService implements NotificationService {
     public void sendAssignment(Participant giver, Participant receiver) {
         log.info("Sending assignment notification to: {}", giver.getEmail());
 
+        // Verificar si mail está configurado
+        if (mailSender == null || fromEmail == null || fromEmail.isEmpty()) {
+            log.warn("⚠️  Mail not configured. Simulating email to: {}", giver.getEmail());
+            log.info("📧 Assignment: {} is Secret Santa for {}", giver.getName(), receiver.getName());
+
+            // Marcar como enviado aunque sea simulado
+            giver.setNotificationSent(true);
+            giver.setNotificationSentAt(LocalDateTime.now());
+            return;
+        }
+
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(giver.getEmail());
-            message.setSubject("Your Secret Santa Assignment - " + giver.getDraw().getName());
+            message.setSubject("🎁 Your Secret Santa Assignment - " + giver.getDraw().getName());
             message.setText(buildEmailContent(giver, receiver));
-
-            // Log para debug
-            log.debug("Sending email from: {} to: {}", fromEmail, giver.getEmail());
 
             mailSender.send(message);
 
             giver.setNotificationSent(true);
             giver.setNotificationSentAt(LocalDateTime.now());
 
-            log.info("Notification sent successfully to: {}", giver.getEmail());
+            log.info("✅ Notification sent successfully to: {}", giver.getEmail());
 
         } catch (Exception e) {
-            log.error("Failed to send notification to {}: {}", giver.getEmail(), e.getMessage(), e);  // ← Agregar stacktrace
-            throw new RuntimeException("Failed to send email notification", e);
+            log.error("❌ Failed to send notification to {}: {}", giver.getEmail(), e.getMessage());
+            // No lanzar excepción para que no rompa el sorteo
         }
     }
 
